@@ -5,6 +5,11 @@ if [ -z "$HOME" ]; then
 	exit 1
 fi
 
+# utility functions
+version_gte() {
+	[ "$2" = "$(echo -e "$1\n$2" | sort -V | head -n1)" ]
+}
+
 if [ -z "$HOST" ]; then
 	HOST=$(hostname)
 fi
@@ -46,20 +51,32 @@ install_feh() {
 }
 
 install_git() {
-	local conf_path=$HOME/.config/git
+	git_version=$(git --version | grep -o -P '\d.\d.\d*')
 
-	[ -d $conf_path ] || mkdir -p $conf_path
-	[ -e $HOME/.gitconfig ] && rm $HOME/.gitconfig
-	[ -e $HOME/.gitignore_global ] && rm $HOME/.gitignore_global
-	[ -e $HOME/.gitconfig.local ] && \
-		mv $HOME/.gitconfig.local $HOME/.config/git/config.local
+	if version_gte $git_version 1.7.12; then
+		local conf_path=$HOME/.config/git
 
-	ln -sf $configs/git/config $conf_path/config
-	ln -sf $configs/git/ignore_global $conf_path/ignore
-	if [ ! -f $conf_path/config.local ]; then
-		echo '[user]' >> $conf_path/config.local
-		echo 'name = Andreas Lutro' >> $conf_path/config.local
-		echo 'email = anlutro@gmail.com' >> $conf_path/config.local
+		[ -d $conf_path ] || mkdir -p $conf_path
+		[ -e $HOME/.gitconfig ] && rm $HOME/.gitconfig
+		[ -e $HOME/.gitignore_global ] && rm $HOME/.gitignore_global
+		[ -e $HOME/.gitconfig.local ] && \
+			mv $HOME/.gitconfig.local $HOME/.config/git/config.local
+
+		ln -sf $configs/git/config $conf_path/config
+		ln -sf $configs/git/ignore_global $conf_path/ignore
+		if [ ! -f $conf_path/config.local ]; then
+			echo '[user]' >> $conf_path/config.local
+			echo 'name = Andreas Lutro' >> $conf_path/config.local
+			echo 'email = anlutro@gmail.com' >> $conf_path/config.local
+		fi
+	else
+		ln -sf $configs/git/config $HOME/.gitconfig
+		ln -sf $configs/git/ignore_global $HOME/.gitignore
+		if [ ! -f $HOME/.gitconfig.local ]; then
+			echo '[user]' >> $HOME/.gitconfig.local
+			echo 'name = Andreas Lutro' >> $HOME/.gitconfig.local
+			echo 'email = anlutro@gmail.com' >> $HOME/.gitconfig.local
+		fi
 	fi
 
 	ln -sf $scripts/git-abort $HOME/bin/git-abort
