@@ -197,40 +197,12 @@ function avenv {
 		echo "A virtualenv is already active!"
 		return 1
 	fi
-	local venv
-	if [ -d $PWD/.tox ]; then
-		if [ -n "$1" ]; then
-			if [ ! -d "$PWD/.tox/$1" ]; then
-				echo "No tox environment $1 found!"
-				return
-			fi
-			venv=$PWD/.tox/$1
-		else
-			venv=$(find $PWD/.tox -mindepth 1 -maxdepth 1 -name 'py*' | sort | tail -1)
-		fi
-		VIRTUAL_ENV_NAME="$(basename $PWD)/$(basename $venv)"
-	elif [ -f $PWD/.virtualenv/bin/activate ]; then
-		venv=$PWD/.virtualenv
-		VIRTUAL_ENV_NAME=$(basename $PWD)
-	elif [ -f $PWD/.venv/bin/activate ]; then
-		venv=$PWD/.venv
-		VIRTUAL_ENV_NAME=$(basename $PWD)
-	elif [ -f $PWD/bin/activate ]; then
-		venv=$PWD
-		VIRTUAL_ENV_NAME=$(basename $PWD)
-	fi
+
+	local venv=$(venv locate $PWD $1)
 
 	if [ -z "$venv" ]; then
 		echo "Couldn't find a virtualenv in cwd!"
-		read -p "Create one using $(python3 --version)? [Y/n] "
-		if [ -z "$REPLY" ] || [[ "$REPLY" =~ ^[Yy] ]]; then
-			echo "Creating virtualenv in $PWD/.venv ..."
-			python3 -m venv .venv || return 1
-			avenv
-			return $?
-		else
-			return 1
-		fi
+		ASK=1 venv create $PWD $1 || exit $?
 	fi
 
 	echo -n "Activating virtualenv: $(realpath --relative-to=$PWD $venv)"
